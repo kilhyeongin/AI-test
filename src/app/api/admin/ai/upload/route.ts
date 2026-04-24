@@ -219,7 +219,7 @@ ${blocks}
     const result = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 8000,
+      max_tokens: 16000,
       temperature: 0,
     });
     const text = result.choices[0]?.message?.content ?? "[]";
@@ -272,7 +272,7 @@ ${blocks}
     const result = await openai.chat.completions.create({
       model: "gpt-4o",
       messages: [{ role: "user", content: prompt }],
-      max_tokens: 8000,
+      max_tokens: 16000,
       temperature: 0,
     });
     const text = result.choices[0]?.message?.content ?? "[]";
@@ -381,7 +381,7 @@ export async function POST(req: Request) {
       }
 
       // 2개씩 배치로 나눠 병렬 AI 호출
-      const batches = chunk(sheetTexts, 2);
+      const batches = chunk(sheetTexts, 1);
       console.log(`[Upload] AI 분석 시작 — ${batches.length}개 배치 병렬 처리 (${docType})`);
 
       const analyzeFunc = docType === "itinerary" ? analyzeItineraryBatch : analyzeRateBatch;
