@@ -392,10 +392,12 @@ export async function POST(req: Request) {
       console.log(`[Upload] AI 분석 시작 — ${batches.length}개 배치 병렬 처리 (${docType})`);
 
       const analyzeFunc = docType === "itinerary" ? analyzeItineraryBatch : analyzeRateBatch;
-      const batchResults = await Promise.all(
-        batches.map((batch) => analyzeFunc(fileName, batch))
-      );
-      const aiResults = batchResults.flat();
+      const aiResults: { sheetName: string; summary: string; rows: Record<string, string>[] }[] = [];
+      for (const batch of batches) {
+        const result = await analyzeFunc(fileName, batch);
+        aiResults.push(...result);
+        if (batches.length > 5) await new Promise((r) => setTimeout(r, 1000));
+      }
       console.log(`[Upload] AI 분석 완료 — ${aiResults.length}개 시트`);
 
       // sheetName → rawText 맵 (AI rows가 빈 경우 rawText 폴백용)
