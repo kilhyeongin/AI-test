@@ -1,0 +1,360 @@
+/* CleanPay풍 관리자 UI (Blue + Orange) — 반응형 + PC/모바일 공통 사이드바 토글 */
+
+/* ===== Tokens ===== */
+:root{
+  --bg:#f6f8fb; --panel:#fff; --border:#e6ebf2; --line:#dfe5ef;
+  --text:#1f2a44; --muted:#7b88a8;
+  --blue:#2563eb; --blue-weak:#e9efff; --blue-strong:#1e40af;
+  --orange:#f97316; --orange-weak:#ffedd5;
+  --green:#16a34a; --danger:#ef4444;
+  --radius:14px; --shadow:0 10px 24px rgba(15,23,42,.06);
+}
+
+/* ===== Base ===== */
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:var(--text);background:var(--bg)}
+a{color:inherit;text-decoration:none}
+h1,h2,h3{margin:0 0 10px;font-weight:600}
+p.muted{color:var(--muted);margin:6px 0}
+
+/* ===== Layout (flex 기반으로 변경: PC에서도 토글 적용 쉬움) ===== */
+.cp-shell{display:flex;min-height:100vh}
+
+/* 토글 체크박스: 기본은 PC에서 '열림', 모바일에서 '닫힘'처럼 동작하도록 CSS 제어 */
+.cp-nav-toggle{position:absolute;opacity:0;pointer-events:none}
+
+/* 사이드바 */
+.cp-sidebar{
+  width:260px; flex:0 0 260px;
+  background:#0b1939; color:#eaf0ff;
+  display:flex;flex-direction:column;gap:16px;
+  padding:18px 14px; border-right:1px solid rgba(255,255,255,.08);
+  transition: width .2s ease, transform .2s ease, padding .2s ease, border-color .2s ease;
+  will-change: width, transform;
+  overflow:hidden;
+  position:sticky; top:0; height:100vh; z-index:20;
+}
+.cp-brand{display:flex;align-items:center;gap:8px;font-size:18px}
+.cp-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.cp-blue{background:#24a1ff}.cp-orange{background:#ff7a1a}
+
+.cp-sidenav{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.cp-sidenav a{padding:10px 12px;border-radius:10px;color:#eaf0ff;opacity:.9}
+.cp-sidenav a:hover{background:rgba(255,255,255,.08)}
+.cp-sidenav a.active{background:rgba(255,255,255,.12);color:#fff;font-weight:600}
+.cp-sidenav-foot{margin-top:auto;font-size:12px;opacity:.7}
+
+/* 본문 */
+.cp-main{flex:1;min-width:0;position:relative;display:flex;flex-direction:column}
+.cp-topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--panel); border-bottom:1px solid var(--border);
+  padding:12px 18px; position:sticky; top:0; z-index:10;
+}
+.cp-menu-btn{font-size:22px;cursor:pointer;margin-right:6px;display:inline-block}
+.cp-top-tabs{display:flex;gap:18px;align-items:center}
+.cp-top-tabs a{padding:10px 2px;border-bottom:2px solid transparent;color:#3b4464}
+.cp-top-tabs a.active{border-color:var(--blue);color:var(--blue-strong);font-weight:600}
+.cp-top-actions{display:flex;align-items:center;gap:12px}
+.cp-profile{display:flex;align-items:center;gap:10px}
+.cp-profile img{width:32px;height:32px;border-radius:50%}
+.cp-profile-meta small{color:var(--muted);display:block;margin-top:2px}
+.cp-content{padding:18px;max-width:1240px;margin:0 auto;width:100%}
+
+/* ✅ PC/모바일 공통: 토글 OFF면 사이드바 닫힘 */
+.cp-nav-toggle:not(:checked) ~ .cp-sidebar{
+  width:0; flex-basis:0; padding:0; border-right-color:transparent;
+}
+.cp-nav-toggle:not(:checked) ~ .cp-main .cp-overlay{display:none}
+
+/* ✅ 토글 ON일 때 오버레이 표시 (PC/모바일 공통) */
+.cp-overlay{
+  display:none;
+  position:fixed; inset:0; background:rgba(0,0,0,.35);
+  z-index:15;
+}
+.cp-nav-toggle:checked ~ .cp-main .cp-overlay{display:block}
+
+/* ===== UI Primitives ===== */
+.cp-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.cp-toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cp-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:.15s;color:var(--text)}
+.cp-btn:hover{background:#f7f9ff}
+.cp-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.cp-btn.primary:hover{background:#1f56d6}
+.cp-btn.strong{background:var(--orange);border-color:var(--orange);color:#fff}
+.cp-btn.ghost{background:#fff}
+.cp-badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--muted);background:#fff}
+.cp-badge.state-new{background:var(--orange-weak);color:var(--orange)}
+.cp-badge.state-ok{background:#ecfdf5;color:var(--green);border:none}
+
+.cp-input,.cp-select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;color:var(--text);outline:none}
+.cp-input:focus,.cp-select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-weak)}
+.cp-field{display:flex;flex-direction:column;gap:6px}
+
+.cp-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.cp-table th,.cp-table td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle;white-space:nowrap}
+.cp-table thead th{background:#f2f6ff;color:#5f6f95;font-weight:600}
+.cp-table tbody tr:hover{background:#fbfdff}
+
+.cp-paging{display:flex;gap:6px;align-items:center;justify-content:center;margin:10px 0}
+.cp-page{padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:#fff}
+.cp-page.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ===== Responsive ===== */
+@media (max-width: 1024px){
+  /* 모바일에서는 사이드바를 슬라이드로 띄우기 */
+  .cp-sidebar{
+    position:fixed; left:0; top:0; bottom:0;
+    transform: translateX(-100%); width:260px; flex-basis:260px; padding:18px 14px;
+  }
+  .cp-nav-toggle:checked ~ .cp-sidebar{ transform: translateX(0) }
+  /* 탭 감춤 */
+  .cp-top-tabs{display:none}
+  .cp-content{padding:14px}
+  .cp-profile-meta{display:none}
+}
+
+@media (max-width: 720px){
+  .cp-toolbar{flex-direction:column;align-items:flex-start;gap:8px}
+  .cp-table{display:block;overflow-x:auto}
+}
+
+/* ===== (옵션) 기존 클래스 매핑 ===== */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;cursor:pointer;transition:.15s;color:var(--text)}
+.btn:hover{background:#f7f9ff}
+.btn-primary{background:var(--blue)!important;color:#fff!important;border-color:var(--blue)!important}
+.table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+.table th,.table td{padding:12px 14px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle;white-space:nowrap}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--muted);background:#fff}
+
+
+/* ===== Admin 내부 공통 레이아웃 / 컴포넌트 ===== */
+
+/* 카드 공통 스타일 (관리자 내부 페이지용) */
+.admin-card {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  padding: 16px 18px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+/* 내부 탭 (관리자 페이지 상단) */
+.admin-inner-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.admin-inner-tabs a {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  text-decoration: none;
+  color: #6b7280;
+  border: 1px solid transparent;
+  transition: all 0.16s ease;
+}
+
+.admin-inner-tabs a:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.admin-inner-tabs a.active {
+  background: #e5edff;
+  border-color: #c7d2fe;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+/* ===== Admin 공통 버튼 ===== */
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: #f8fafc;
+  color: #0f172a;
+  line-height: 1;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.admin-btn:hover {
+  background: #e5e7eb;
+}
+
+/* 메인 액션 (파란 버튼) */
+.admin-btn-primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+.admin-btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* 서브 액션 (회색 아웃라인) */
+.admin-btn-outline {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+.admin-btn-outline:hover {
+  background: #f8fafc;
+}
+
+/* 텍스트 느낌 (ghost) */
+.admin-btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #4b5563;
+}
+.admin-btn-ghost:hover {
+  background: #f3f4f6;
+}
+
+/* 위험(삭제 등) */
+.admin-btn-danger {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+.admin-btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* 사이즈 */
+.admin-btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 999px;
+}
+
+.admin-btn-md {
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+/* 단순 테이블 (관리자 내부용) */
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table thead tr {
+  background: #f3f4f6;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+
+.admin-table th {
+  font-weight: 600;
+  color: #374151;
+}
+
+.admin-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* 상태 뱃지 */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.admin-badge-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.admin-badge-dim {
+  background: #e5e7eb;
+  color: #4b5563;
+}
+
+/* 기본(PC)은 그대로 두고, 모바일에서만 스크롤 탭 */
+/* ===== AdminInnerTabs: 모바일 스크롤 + 힌트(그라데이션) ===== */
+@media (max-width: 720px){
+
+  /* 스크롤을 실제로 담당하는 래퍼 */
+  .admin-inner-tabs{
+    position: relative;
+    display: block;            /* flex 유지보다 block이 스크롤 안정적 */
+    margin-bottom: 10px;
+
+    /* 바깥에서는 보더/배경 기존 유지하고 싶으면 여기 건드리지 말고
+       아래 scroller가 스크롤 담당 */
+  }
+
+  /* ✅ 핵심: 스크롤 컨테이너를 따로 둠 (AdminInnerTabs에서 클래스 추가 필요) */
+  .admin-inner-tabs .ait-scroller{
+    display: flex;
+    gap: 8px;
+
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+
+    white-space: nowrap;
+    flex-wrap: nowrap;
+
+    padding: 6px 14px 8px 2px;  /* ✅ 오른쪽 padding을 크게 줘서 "끝이 안 붙는" 효과 */
+    scroll-snap-type: x proximity; /* 부드럽게(선택) */
+  }
+
+  .admin-inner-tabs .ait-scroller::-webkit-scrollbar{ height: 0; }
+  .admin-inner-tabs .ait-scroller{ scrollbar-width: none; }
+
+  .admin-inner-tabs .ait-scroller a{
+    flex: 0 0 auto;
+    white-space: nowrap;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    scroll-snap-align: start;
+  }
+
+  /* ✅ "옆에 더 있음" 힌트: 오른쪽 그라데이션 마스크 */
+  .admin-inner-tabs::after{
+    content:"";
+    position:absolute;
+    top:0;
+    right:0;
+    width: 26px;               /* 힌트 폭 */
+    height: 100%;
+    pointer-events:none;
+
+    /* 페이지 배경색/탭 배경색에 맞춰 조정 가능 */
+    background: linear-gradient(to right, rgba(246,248,251,0), rgba(246,248,251,1));
+  }
+
+  /* ✅ 스크롤 가능하도록 부모 오버플로우를 풀어줌 (많이 막히는 원인) */
+  .cp-content, .admin-layout-main{
+    overflow: visible;
+  }
+}
