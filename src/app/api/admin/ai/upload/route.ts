@@ -11,7 +11,8 @@ const pdfParse = require("pdf-parse");
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // 시트에서 원본 텍스트만 추출 (병합 셀 값 채우기 포함)
-function sheetToRawText(sheet: XLSX.WorkSheet): string {
+function sheetToRawText(sheet: XLSX.WorkSheet | undefined): string {
+  if (!sheet) return "";
   const raw: string[][] = XLSX.utils.sheet_to_json(sheet, {
     header: 1,
     defval: "",
