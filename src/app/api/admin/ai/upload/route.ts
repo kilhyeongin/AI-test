@@ -10,13 +10,28 @@ const pdfParse = require("pdf-parse");
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 시트에서 원본 텍스트만 추출 (구조 파싱 없이)
+// 시트에서 원본 텍스트만 추출 (병합 셀 값 채우기 포함)
 function sheetToRawText(sheet: XLSX.WorkSheet): string {
   const raw: string[][] = XLSX.utils.sheet_to_json(sheet, {
     header: 1,
     defval: "",
     raw: false,
   });
+
+  // 병합 셀의 시작 값을 나머지 셀에 채워넣기
+  const merges: XLSX.Range[] = (sheet["!merges"] as XLSX.Range[] | undefined) ?? [];
+  for (const merge of merges) {
+    const { s, e } = merge;
+    const value = raw[s.r]?.[s.c] ?? "";
+    if (!value) continue;
+    for (let r = s.r; r <= e.r; r++) {
+      for (let c = s.c; c <= e.c; c++) {
+        if (r === s.r && c === s.c) continue;
+        if (raw[r]) raw[r][c] = value;
+      }
+    }
+  }
+
   return raw
     .filter((row) => row.some((c) => String(c ?? "").trim()))
     .map((row) =>
@@ -184,7 +199,8 @@ ${blocks}
 
 규칙:
 - 요금/가격 정보가 있는 시트만 포함. 목차·일정표·비요금 시트는 rows를 빈 배열로.
-- 모든 행을 반드시 다음 7개 컬럼으로 통일: ${standardCols}
+- 가능하면 다음 7개 컬럼으로 통일하세요: ${standardCols}
+- 단, 시트 구조가 표준 요금표와 다른 경우(예: 업그레이드 비용표, 선택관광 추가비용 등)는 원본 데이터에 맞는 컬럼명을 그대로 사용해도 됩니다. 이 경우 모든 행의 컬럼명을 일관되게 유지하세요.
 - 병합 셀로 인해 상품명·룸타입 등이 첫 행에만 있고 이후 행이 비어있을 수 있습니다. 이 경우 직전 행 값을 이어받아 모든 행을 완성하세요.
 - 상품명: 호텔명 또는 상품명
 - 룸타입: 객실 종류 (예: Deluxe, Suite, Twin 등)

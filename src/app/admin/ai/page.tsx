@@ -84,6 +84,7 @@ export default function AdminAiPage() {
   const [drafts, setDrafts] = useState<DraftEntry[]>([]);
   const [draftLoading, setDraftLoading] = useState(false);
   const [draftMsg, setDraftMsg] = useState("");
+  const [reanalyzingId, setReanalyzingId] = useState<string | null>(null);
   const [editingCell, setEditingCell] = useState<{ draftId: string; rowIdx: number; col: string } | null>(null);
   const [editingCellValue, setEditingCellValue] = useState("");
 
@@ -163,7 +164,8 @@ export default function AdminAiPage() {
   }
 
   async function reanalyzeDraft(id: string) {
-    setDraftMsg("AI 재분석 중...");
+    setReanalyzingId(id);
+    setDraftMsg("");
     const res = await fetch("/api/admin/ai/draft", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -178,6 +180,7 @@ export default function AdminAiPage() {
     } else {
       setDraftMsg(`❌ 재분석 실패: ${data.error}`);
     }
+    setReanalyzingId(null);
   }
 
   async function approveAllByFile(fileName: string) {
@@ -774,7 +777,9 @@ export default function AdminAiPage() {
                   <div style={{ overflowX: "auto" }}>
                     {(() => {
                       const isItinerary = sheets[0]?.docType === "itinerary";
-                      const colHeaders = isItinerary ? ITINERARY_HEADERS : STANDARD_HEADERS;
+                      const fallbackHeaders = isItinerary ? ITINERARY_HEADERS : STANDARD_HEADERS;
+                      const allKeys = Array.from(new Set(sheets.flatMap((d) => d.rows.flatMap((r) => Object.keys(r)))));
+                      const colHeaders = allKeys.length > 0 ? allKeys : fallbackHeaders;
                       return (
                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                           <thead>
@@ -812,9 +817,10 @@ export default function AdminAiPage() {
                                         </p>
                                         <button
                                           onClick={() => reanalyzeDraft(draft._id)}
-                                          style={{ padding: "4px 12px", fontSize: 11, fontWeight: 700, border: "none", borderRadius: 5, cursor: "pointer", background: "#7c3aed", color: "#fff", whiteSpace: "nowrap", flexShrink: 0 }}
+                                          disabled={reanalyzingId === draft._id}
+                                          style={{ padding: "4px 12px", fontSize: 11, fontWeight: 700, border: "none", borderRadius: 5, cursor: reanalyzingId === draft._id ? "not-allowed" : "pointer", background: "#7c3aed", color: "#fff", whiteSpace: "nowrap", flexShrink: 0, opacity: reanalyzingId === draft._id ? 0.5 : 1, transition: "opacity 0.2s" }}
                                         >
-                                          AI 재분석
+                                          {reanalyzingId === draft._id ? "재분석 중..." : "AI 재분석"}
                                         </button>
                                       </div>
                                       <pre style={{ fontSize: 11, color: "#475569", whiteSpace: "pre-wrap", wordBreak: "break-all", maxHeight: 200, overflowY: "auto", margin: 0, lineHeight: 1.6, background: "#fff", padding: "8px", borderRadius: 4, border: "1px solid #fde68a" }}>

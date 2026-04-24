@@ -52,7 +52,10 @@ export async function POST(req: Request) {
     if (action === "approve") {
       const drafts = await AiKnowledgeDraft.find({ _id: { $in: ids } }).lean();
       for (const draft of drafts) {
-        const headers = (draft as any).docType === "itinerary" ? ITINERARY_HEADERS : STANDARD_HEADERS;
+        const fallback = (draft as any).docType === "itinerary" ? ITINERARY_HEADERS : STANDARD_HEADERS;
+        const rows = (draft as any).rows ?? [];
+        const detectedKeys = rows.length > 0 ? Array.from(new Set(rows.flatMap((r: any) => Object.keys(r)))) as string[] : [];
+        const headers = detectedKeys.length > 0 ? detectedKeys : fallback;
         await AiKnowledge.create({
           fileName: draft.fileName,
           fileType: draft.fileType,
@@ -129,7 +132,8 @@ ${rawText}
 위 내용을 분석해 요금표 데이터를 JSON 배열로 반환하세요. 다른 텍스트는 절대 쓰지 마세요.
 
 규칙:
-- 컬럼: ${colHeaders.join(", ")}
+- 가능하면 다음 컬럼으로 통일하세요: ${colHeaders.join(", ")}
+- 단, 시트 구조가 표준 요금표와 다른 경우(예: 업그레이드 비용표, 선택관광 추가비용 등)는 원본 데이터에 맞는 컬럼명을 그대로 사용해도 됩니다. 이 경우 모든 행의 컬럼명을 일관되게 유지하세요.
 - 병합 셀로 인해 상품명·룸타입 등이 첫 행에만 있고 이후 행이 비어있을 수 있습니다. 직전 행 값을 이어받아 모든 행을 완성하세요.
 - 상품명, 1인요금 중 하나라도 파악 가능하면 행으로 포함하세요.
 - 파악 불가 컬럼은 빈 문자열 ""로.
