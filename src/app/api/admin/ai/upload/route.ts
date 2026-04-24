@@ -133,10 +133,10 @@ function fallbackParseXlsx(buffer: Buffer): { sheetName: string; rawText: string
       const endMatch = /<\/(?:[a-z]+:)?row>/.exec(part);
       const raw = endMatch
         ? part.slice(0, endMatch.index + endMatch[0].length)
-        : part.slice(0, 4000);
+        : part.slice(0, 20000);
       // 자가닫기 셀(<x:c ... />) 먼저 제거 — 열린 태그로 오인식되는 버그 방지
       // g 플래그 regex는 루프 안에서 매번 새로 생성 (lastIndex 오염 방지)
-      const parseTarget = (raw.length > 4000 ? raw.slice(0, 4000) : raw)
+      const parseTarget = (raw.length > 20000 ? raw.slice(0, 20000) : raw)
         .replace(/<(?:[a-z]+:)?c\b[^>]*\/>/g, "");
 
       const cells: { colNum: number; value: string }[] = [];
@@ -211,7 +211,7 @@ ${blocks}
 - 포함사항: 조식, 공항이동 등 포함 내용
 - 특이사항: 비고, 조건, 추가 안내 등
 - 원본에 해당 정보가 없으면 빈 문자열 ""로
-- rows는 시트당 최대 50개
+- rows는 시트당 최대 200개
 
 형식:
 [{"sheetName":"시트명","summary":"한줄요약","rows":[{"상품명":"","룸타입":"","기간":"","1인요금":"","통화":"","포함사항":"","특이사항":""}]}]`;
@@ -264,7 +264,7 @@ ${blocks}
 - 식사: 원본의 "조식/중식/석식" 항목을 확인하되 반드시 다음 규칙을 따를 것. "자유식"으로 표기된 식사는 포함이 아니므로 기재하지 마세요. 오직 "현지식", "포함", "제공" 등으로 명시된 식사만 기재. 예) "조식: 자유식 중식: 현지식 석식: 자유식" → "중식" 만 기재. 모두 자유식이면 빈 문자열 ""
 - 특이사항: 비고, 주의사항, 추가요금 안내, 진행 조건 등 (없으면 빈 문자열)
 - 원본에 해당 정보가 없으면 빈 문자열 ""로
-- rows는 시트당 최대 50개
+- rows는 시트당 최대 200개
 
 형식:
 [{"sheetName":"시트명","summary":"한줄요약","rows":[{"일차":"","지역":"","교통편":"","일정내용":"","선택관광":"","숙박":"","식사":"","특이사항":""}]}]`;
@@ -285,7 +285,7 @@ ${blocks}
   }
 }
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   try {
@@ -359,8 +359,14 @@ export async function POST(req: Request) {
       const workbook = XLSX.read(buffer, { type: "buffer" });
       console.log(`[Upload] ${fileName} — 시트 ${workbook.SheetNames.length}개`);
 
-      // 모든 시트에서 원본 텍스트 추출
+      // 목차·안내 전용 시트 제외 키워드
+      const SKIP_KEYWORDS = ["목차", "안내", "index", "cover", "표지"];
+      const isSkipSheet = (name: string) =>
+        SKIP_KEYWORDS.some((kw) => name.toLowerCase().replace(/\s/g, "").includes(kw.toLowerCase()));
+
+      // 모든 시트에서 원본 텍스트 추출 (목차 시트 제외)
       let sheetTexts = workbook.SheetNames
+        .filter((sheetName) => !isSkipSheet(sheetName))
         .map((sheetName) => ({
           sheetName,
           rawText: sheetToRawText(workbook.Sheets[sheetName]),
@@ -381,8 +387,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: false, error: "읽을 수 있는 데이터가 없습니다. 파일을 Excel 또는 Google Sheets에서 열어 다시 저장 후 시도해보세요." }, { status: 400 });
       }
 
-      // 2개씩 배치로 나눠 병렬 AI 호출
-      const batches = chunk(sheetTexts, 1);
+      // 3개씩 배치로 나눠 병렬 AI 호출
+      const batches = chunk(sheetTexts, 3);
       console.log(`[Upload] AI 분석 시작 — ${batches.length}개 배치 병렬 처리 (${docType})`);
 
       const analyzeFunc = docType === "itinerary" ? analyzeItineraryBatch : analyzeRateBatch;
